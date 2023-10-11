@@ -106,9 +106,13 @@ public class Program
     }
 }
 
+[DebuggerDisplay("F: {Hash} {RelativePath}")]
+public record SyncFile(string Hash, string BasePath, string RelativePath)
+{
+    public string FullPath => Path.GetFullPath(Path.Join(BasePath, RelativePath));
+}
 
-
-[DebuggerDisplay("D {RelativePath}")]
+[DebuggerDisplay("D: {RelativePath}")]
 public record SyncDir(string BasePath, string RelativePath)
 {
     public string FullPath => Path.Join(BasePath, RelativePath);
@@ -118,6 +122,12 @@ public record SyncDir(string BasePath, string RelativePath)
 public interface IHashService
 {
     Task<string> CalculateFileMD5Async(string filePath);
+}
+
+public interface IDirService
+{
+    IEnumerable<SyncDir> GetDirectoriesRecursively(string dirBasePath);
+    IAsyncEnumerable<SyncFile> GetFilesRecursivelyAsync(string dirFullPath);
 }
 
 public class HashService : IHashService
@@ -131,12 +141,6 @@ public class HashService : IHashService
         var hash = md5.ComputeHash(bytesToHash);
         return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
     }
-}
-
-public interface IDirService
-{
-    IEnumerable<SyncDir> GetDirectoriesRecursively(string dirBasePath);
-    IAsyncEnumerable<SyncFile> GetFilesRecursivelyAsync(string dirFullPath);
 }
 
 public class DirService : IDirService
@@ -181,10 +185,4 @@ public class DirService : IDirService
         var file = new SyncFile(fileHash, dirBasePath, relativePath);
         return file;
     }
-}
-
-[DebuggerDisplay("F: {Hash} {RelativePath}")]
-public record SyncFile(string Hash, string BasePath, string RelativePath)
-{
-    public string FullPath => Path.GetFullPath(Path.Join(BasePath, RelativePath));
 }
