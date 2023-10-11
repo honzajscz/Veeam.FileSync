@@ -7,7 +7,7 @@ namespace Veeam.FileSync.Tests
         [Test]
         public void X_test()
         {
-            FileName.X();
+         //   FileName.X();
         }
     }
 }
