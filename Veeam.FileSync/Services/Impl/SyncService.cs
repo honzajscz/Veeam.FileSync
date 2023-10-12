@@ -29,7 +29,8 @@ public class SyncService : ISyncService
 
         var deletedDirs = DeleteDirs(sourceDirs, replicaDirs);
 
-        return new SyncResult(matchingDirs, createdDirs, deletedDirs, matchingFiles, createdFiles, deletedFiles, movedFiles);
+        return new SyncResult(matchingDirs, createdDirs, deletedDirs, matchingFiles, createdFiles, deletedFiles,
+            movedFiles);
     }
 
     private SyncDir[] CreateDirs(IEnumerable<SyncDir> sourceDirs, IEnumerable<SyncDir> replicaDirs,
@@ -49,11 +50,9 @@ public class SyncService : ISyncService
 
     private SyncDir[] FindMatchingDirs(IEnumerable<SyncDir> sourceDirs, IEnumerable<SyncDir> replicaDirs)
     {
-        var matchingDirs = sourceDirs.IntersectBy(replicaDirs.Select(rd => rd.RelativePath), sd => sd.RelativePath).ToArray();
-        foreach (var matchingDir in matchingDirs)
-        {
-            Logger.Debug($"D= {matchingDir.RelativePath}");
-        }
+        var matchingDirs = sourceDirs.IntersectBy(replicaDirs.Select(rd => rd.RelativePath), sd => sd.RelativePath)
+            .ToArray();
+        foreach (var matchingDir in matchingDirs) Logger.Debug($"D= {matchingDir.RelativePath}");
 
         return matchingDirs;
     }

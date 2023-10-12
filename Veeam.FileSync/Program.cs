@@ -4,9 +4,7 @@ using CommandLine.Text;
 using log4net;
 using log4net.Appender;
 using log4net.Config;
-
 using Veeam.FileSync.Services.Impl;
-
 
 [assembly: XmlConfigurator(ConfigFile = "log4net.config")]
 
@@ -16,29 +14,14 @@ public class Program
 {
     private static readonly ILog Logger = LogManager.GetLogger(typeof(Program));
 
-    public class Options
-    {
-        [Option('i', "syncInterval", Required = true, HelpText = "Set the synchronization interval in milliseconds.")]
-        public double SyncInterval{ get; set; }
-
-        [Option('l', "logPath", Required = true, HelpText = "Set the path to the log file.")]
-        public string LogPath{ get; set; }
-
-        [Option('s', "sourceDirPath", Required = true, HelpText = "Set the path source directory.")]
-        public string SourceDirPath{ get; set; }
-
-        [Option('r', "replicaDirPath", Required = true, HelpText = "Set the path replica directory.")]
-        public string ReplicaDirPath{ get; set; }
-
-    }
-
     public static async Task Main(string[] args)
     {
         var parsedArgs = ParseArgs(args);
 
         ConfigureLogPath(parsedArgs.LogPath);
         using var cts = new CancellationTokenSource();
-        var syncTask = RunSyncAsync(parsedArgs.SourceDirPath, parsedArgs.ReplicaDirPath, parsedArgs.SyncInterval, retries: 5, cts.Token);
+        var syncTask = RunSyncAsync(parsedArgs.SourceDirPath, parsedArgs.ReplicaDirPath, parsedArgs.SyncInterval, 5,
+            cts.Token);
         Console.WriteLine("Press any key to quit");
         Console.ReadKey();
         Console.WriteLine("Waiting to complete current sync operation...");
@@ -46,9 +29,9 @@ public class Program
         await syncTask;
     }
 
-    private static Options ParseArgs(string[] args)
+    private static Arguments ParseArgs(string[] args)
     {
-        var parserResult = Parser.Default.ParseArguments<Options>(args);
+        var parserResult = Parser.Default.ParseArguments<Arguments>(args);
         var errors = parserResult.Errors.ToArray();
         foreach (var error in errors)
         {
@@ -63,7 +46,8 @@ public class Program
         return options;
     }
 
-    private static async ValueTask RunSyncAsync(string sourceDirBasePath, string replicaDirBasePath, double syncIntervalMs, int retries, CancellationToken ct = default)
+    private static async ValueTask RunSyncAsync(string sourceDirBasePath, string replicaDirBasePath,
+        double syncIntervalMs, int retries, CancellationToken ct = default)
     {
         // Economy class DI. TODO: Use a properer DI container
         var hashService = new HashService();
@@ -90,13 +74,14 @@ public class Program
                         $"D=:{syncRes.MatchingDirs.Count()}\tD+:{syncRes.CreatedDirs.Count()}\tD-:{syncRes.DeletedDirs.Count()}");
                     Logger.Info(
                         $"F=:{syncRes.MatchingFiles.Count()}\tF+:{syncRes.CreatedFiles.Count()}\tF-:{syncRes.DeletedFiles.Count()}\tF>:{syncRes.MovedFiles.Count()}");
-                    Logger.Info("Legend: F is file, D is directory, = is matching, + is created, - is deleted, > is moved");
+                    Logger.Info(
+                        "Legend: F is file, D is directory, = is matching, + is created, - is deleted, > is moved");
                 }
                 catch (Exception e)
                 {
                     if (retries == 0)
                     {
-                        Logger.Error($"The sync operation failed multiple times and it is therefore aborted.");
+                        Logger.Error("The sync operation failed multiple times and it is therefore aborted.");
                         return;
                     }
 

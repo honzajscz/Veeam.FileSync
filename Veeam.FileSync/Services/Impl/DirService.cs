@@ -26,31 +26,32 @@ public class DirService : IDirService
             ? Directory.EnumerateFiles(dirBasePath, "*", SearchOption.AllDirectories)
             : Enumerable.Empty<string>();
 
-        var parallelQuery = filePaths.AsParallel().Select(async filePath => await InitSyncFileAsync(dirBasePath, filePath));
-        foreach (var task in parallelQuery) 
+        var parallelQuery = filePaths.AsParallel()
+            .Select(async filePath => await InitSyncFileAsync(dirBasePath, filePath));
+        foreach (var task in parallelQuery)
             yield return await task;
     }
-    
+
     public void CreateDir(string dirPath)
     {
         Directory.CreateDirectory(dirPath);
     }
-    
+
     public void DeleteDir(string dirPath)
     {
         Directory.Delete(dirPath);
     }
-    
+
     public void MoveFile(string sourceFilePath, string destinationFilePath)
     {
         File.Move(sourceFilePath, destinationFilePath);
     }
-    
+
     public void DeleteFile(string filePath)
     {
         File.Delete(filePath);
     }
-    
+
     public void CopyFile(string sourceFilePath, string destinationFilePath)
     {
         File.Copy(sourceFilePath, destinationFilePath);
