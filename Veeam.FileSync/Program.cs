@@ -1,4 +1,6 @@
 ﻿using System.Diagnostics;
+using CommandLine;
+using CommandLine.Text;
 using log4net;
 using log4net.Appender;
 using log4net.Config;
@@ -14,18 +16,51 @@ public class Program
 {
     private static readonly ILog Logger = LogManager.GetLogger(typeof(Program));
 
-    public static async Task Main()
+    public class Options
     {
-        ConfigureLogPath(@"c:\temp\x.log");
-        var sourceDirBasePath = @"c:\Temp\_archive\.azure\";
-        var replicaDirBasePath = @"c:\Temp\_archive\.azure2\";
+        [Option('i', "syncInterval", Required = true, HelpText = "Set the synchronization interval in milliseconds.")]
+        public double SyncInterval{ get; set; }
+
+        [Option('l', "logPath", Required = true, HelpText = "Set the path to the log file.")]
+        public string LogPath{ get; set; }
+
+        [Option('s', "sourceDirPath", Required = true, HelpText = "Set the path source directory.")]
+        public string SourceDirPath{ get; set; }
+
+        [Option('r', "replicaDirPath", Required = true, HelpText = "Set the path replica directory.")]
+        public string ReplicaDirPath{ get; set; }
+
+    }
+
+    public static async Task Main(string[] args)
+    {
+        var parsedArgs = ParseArgs(args);
+
+        ConfigureLogPath(parsedArgs.LogPath);
         using var cts = new CancellationTokenSource();
-        var syncTask = RunSyncAsync(sourceDirBasePath, replicaDirBasePath, syncIntervalMs: 2000, retries: 5, cts.Token);
+        var syncTask = RunSyncAsync(parsedArgs.SourceDirPath, parsedArgs.ReplicaDirPath, parsedArgs.SyncInterval, retries: 5, cts.Token);
         Console.WriteLine("Press any key to quit");
         Console.ReadKey();
         Console.WriteLine("Waiting to complete current sync operation...");
         cts.Cancel();
         await syncTask;
+    }
+
+    private static Options ParseArgs(string[] args)
+    {
+        var parserResult = Parser.Default.ParseArguments<Options>(args);
+        var errors = parserResult.Errors.ToArray();
+        foreach (var error in errors)
+        {
+            var sentenceBuilder = SentenceBuilder.Create();
+            Logger.Error(sentenceBuilder.FormatError(error)); // logging to the app folder!
+        }
+
+        if (parserResult.Errors.Any())
+            Environment.Exit(-1);
+
+        var options = parserResult.Value;
+        return options;
     }
 
     private static async ValueTask RunSyncAsync(string sourceDirBasePath, string replicaDirBasePath, double syncIntervalMs, int retries, CancellationToken ct = default)
