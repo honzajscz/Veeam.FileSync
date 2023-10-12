@@ -1,4 +1,6 @@
-﻿namespace Veeam.FileSync.Services.Impl;
+﻿using Veeam.FileSync.Services;
+
+namespace Veeam.FileSync;
 
 public class DirService : IDirService
 {
@@ -25,10 +27,10 @@ public class DirService : IDirService
         var filePaths = Directory.Exists(dirBasePath)
             ? Directory.EnumerateFiles(dirBasePath, "*", SearchOption.AllDirectories)
             : Enumerable.Empty<string>();
-        foreach (var filePath in filePaths)
+        
+        foreach (var task in filePaths.AsParallel().Select(async filePath => await CreateFileAsync(dirBasePath, filePath)))
         {
-            var file = await CreateFileAsync(dirBasePath, filePath);
-            yield return file;
+            yield return await task;
         }
     }
 
