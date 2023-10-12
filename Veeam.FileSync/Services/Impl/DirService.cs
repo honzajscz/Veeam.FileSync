@@ -1,6 +1,4 @@
-﻿using Veeam.FileSync.Services;
-
-namespace Veeam.FileSync;
+﻿namespace Veeam.FileSync.Services.Impl;
 
 public class DirService : IDirService
 {
@@ -27,11 +25,35 @@ public class DirService : IDirService
         var filePaths = Directory.Exists(dirBasePath)
             ? Directory.EnumerateFiles(dirBasePath, "*", SearchOption.AllDirectories)
             : Enumerable.Empty<string>();
-        
-        foreach (var task in filePaths.AsParallel().Select(async filePath => await CreateFileAsync(dirBasePath, filePath)))
-        {
+
+        var parallelQuery = filePaths.AsParallel().Select(async filePath => await InitSyncFileAsync(dirBasePath, filePath));
+        foreach (var task in parallelQuery) 
             yield return await task;
-        }
+    }
+    
+    public void CreateDir(string dirPath)
+    {
+        Directory.CreateDirectory(dirPath);
+    }
+    
+    public void DeleteDir(string dirPath)
+    {
+        Directory.Delete(dirPath);
+    }
+    
+    public void MoveFile(string sourceFilePath, string destinationFilePath)
+    {
+        File.Move(sourceFilePath, destinationFilePath);
+    }
+    
+    public void DeleteFile(string filePath)
+    {
+        File.Delete(filePath);
+    }
+    
+    public void CopyFile(string sourceFilePath, string destinationFilePath)
+    {
+        File.Copy(sourceFilePath, destinationFilePath);
     }
 
     private SyncDir CreateDir(string dirBasePath, string filePath)
@@ -41,7 +63,7 @@ public class DirService : IDirService
         return dir;
     }
 
-    private async Task<SyncFile> CreateFileAsync(string dirBasePath, string filePath)
+    private async Task<SyncFile> InitSyncFileAsync(string dirBasePath, string filePath)
     {
         var relativePath = Path.GetRelativePath(dirBasePath, filePath);
         var fileHash = await _hashService.CalculateFileMD5Async(filePath);

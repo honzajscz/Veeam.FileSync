@@ -40,7 +40,7 @@ public class SyncService : ISyncService
 
         foreach (var createdDir in createdDirs)
         {
-            Directory.CreateDirectory(Path.Combine(replicaDirBasePath, createdDir.RelativePath));
+            _dirService.CreateDir(Path.Combine(replicaDirBasePath, createdDir.RelativePath));
             Logger.Info($"D+ {createdDir.RelativePath}");
         }
 
@@ -95,7 +95,7 @@ public class SyncService : ISyncService
 
             var movedFile = replicaFiles[movedFileIndex];
             var destFileName = Path.Combine(replicaDirBasePath, sourceFile.RelativePath);
-            File.Move(movedFile.FullPath, destFileName);
+            _dirService.MoveFile(movedFile.FullPath, destFileName);
 
             replicaFiles.RemoveAt(movedFileIndex);
             movedFiles.Add(sourceFile);
@@ -111,7 +111,7 @@ public class SyncService : ISyncService
 
         foreach (var replicaFile in replicaFiles)
         {
-            File.Delete(replicaFile.FullPath);
+            _dirService.DeleteFile(replicaFile.FullPath);
             deletedFiles.Add(replicaFile);
             Logger.Info($"F- '{replicaFile.RelativePath}'");
         }
@@ -124,7 +124,7 @@ public class SyncService : ISyncService
         foreach (var sourceFile in createdFiles)
         {
             var destFileName = Path.Combine(replicaDirBasePath, sourceFile.RelativePath);
-            File.Copy(sourceFile.FullPath, destFileName);
+            _dirService.CopyFile(sourceFile.FullPath, destFileName);
             Logger.Info($"F+ '{sourceFile.RelativePath}'");
         }
     }
@@ -137,7 +137,7 @@ public class SyncService : ISyncService
             .ToArray();
         foreach (var deletedDir in deletedDirs)
         {
-            Directory.Delete(deletedDir.FullPath);
+            _dirService.DeleteDir(deletedDir.FullPath);
             Logger.Info($"D- '{deletedDir.RelativePath}'");
         }
 
