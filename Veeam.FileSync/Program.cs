@@ -20,8 +20,8 @@ public class Program
 
         ConfigureLogPath(parsedArgs.LogPath);
         using var cts = new CancellationTokenSource();
-        var syncTask = RunSyncAsync(parsedArgs.SourceDirPath, parsedArgs.ReplicaDirPath, parsedArgs.SyncInterval, 5,
-            cts.Token);
+        const int retriesOnError = 5;
+        var syncTask = RunSyncAsync(parsedArgs.SourceDirPath, parsedArgs.ReplicaDirPath, parsedArgs.SyncInterval, retriesOnError, cts.Token);
         Console.WriteLine("Press any key to quit");
         Console.ReadKey();
         Console.WriteLine("Waiting to complete current sync operation...");
@@ -47,7 +47,7 @@ public class Program
     }
 
     private static async ValueTask RunSyncAsync(string sourceDirBasePath, string replicaDirBasePath,
-        double syncIntervalMs, int retries, CancellationToken ct = default)
+        double syncIntervalMs, int retriesOnError, CancellationToken ct = default)
     {
         // Economy-class DI. TODO: Use a properer DI container
         var hashService = new HashService();
@@ -79,13 +79,13 @@ public class Program
                 }
                 catch (Exception e)
                 {
-                    if (retries == 0)
+                    if (retriesOnError == 0)
                     {
                         Logger.Error("The sync operation failed multiple times and it is therefore aborted.");
                         return;
                     }
 
-                    Logger.Error($"The sync operation failed. {--retries} attempts left.");
+                    Logger.Error($"The sync operation failed. {--retriesOnError} attempts left.");
                     Logger.Error(e.Message, e);
                 }
             } while (await periodicTimer.WaitForNextTickAsync(ct));
