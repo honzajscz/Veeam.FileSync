@@ -49,7 +49,7 @@ public class Program
     private static async ValueTask RunSyncAsync(string sourceDirBasePath, string replicaDirBasePath,
         double syncIntervalMs, int retries, CancellationToken ct = default)
     {
-        // Economy class DI. TODO: Use a properer DI container
+        // Economy-class DI. TODO: Use a properer DI container
         var hashService = new HashService();
         var dirService = new DirService(hashService);
         var syncService = new SyncService(dirService);
@@ -90,7 +90,7 @@ public class Program
                 }
             } while (await periodicTimer.WaitForNextTickAsync(ct));
         }
-        catch (TaskCanceledException)
+        catch (OperationCanceledException)
         {
         }
     }
